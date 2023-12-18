@@ -1,8 +1,8 @@
-# Das Programm ist hauptsächlich für mich selbst, um meine Dateien schneller einzuordnen,
-# ohne selbst in die Ordner navigieren zu müssen oder Verknüpfungen der Ordner zu erstellen
-
-# Die jeweiligen Pfade können natürlich je nach Belieben angepasst werden, wenn jemand dieses Programm für sich
-# selbst nutzen will :-).
+'''
+This program is mainly for my personal use to organize my files more quickly, without
+having to navigate through folders manually or create shortcuts.
+Paths can be customized to suit individual preferences.
+'''
 
 import shutil
 import os
@@ -11,58 +11,64 @@ import getpass
 
 username = getpass.getuser()
 
-# Semesterangabe, falls Ordner in Semester unterteilt.
-semester = input("Gib das Semester (als Zahl) an, zu der die Datei gehört: ") + ". Semester"
+# Semester specification, in case folders are divided by semester.
+semester = input("Enter the semester (as a number) to which the file belongs: ") + ". Semester"
 
-startpfad = os.path.join('/Users', username, 'OneDrive', 'Uni', 'FU', semester)
+start_path = os.path.join('/Users', username, 'OneDrive', 'Uni', 'FU', semester)
 
-def check_datei(dateiname):
-    module = ["ALP3", "ALP4", "TI2", "TI3", "Statistik", "Statistik_II"]
-    uebungen = reversed([f"U{i}" for i in range(1, 15)])
+def check_file(filename):
+    modules = ["ALP3", "ALP4", "TI2", "TI3", "Statistics", "Statistics_II"]
 
-    # Wenn Modulname und Uebungsnummer im Dateinamen vorhanden sind, suche Datei
-    matches = [(mod, ueb) for mod in module for ueb in uebungen if mod in dateiname and ueb in dateiname]
+    # The list is reversed to prioritize the recognition of exercise numbers with two digits (e.g., 12, 13) first.
+    exercises = reversed([f"U{i}" for i in range(1, 15)])
+
+    # If module name and exercise number are present in the filename, search for the file
+    matches = [(mod, ex) for mod in modules for ex in exercises if mod in filename and ex in filename]
+
     if matches:
-        modul = matches[0][0]
-        uebung = matches[0][1]
-        zielpfad = os.path.join(startpfad, modul, uebung)
-        if os.path.exists(zielpfad):
-            verschiebe_datei(dateiname, zielpfad)
+        module = matches[0][0]
+        exercise = matches[0][1]
+        target_path = os.path.join(start_path, module, exercise)
+        if os.path.exists(target_path):
+            move_file(filename, target_path)
         else:
-            check_pfad(dateiname, zielpfad)
+            check_path(filename, target_path)
     else:
-        print("Datei nicht gefunden.")
+        print("File not found.")
 
-
-def check_pfad(datei, pfad):
-    ordner_teile = pfad.split(os.path.sep)
-    for i in range(1, len(ordner_teile) + 1):
-        teilpfad = os.path.join(*ordner_teile[:i])
-        if not os.path.exists(teilpfad):
-            ordner_erstellen = input(f"Der Ordner '{teilpfad}' existiert nicht.\nSoll dieser Ordner erstellt werden? (Y/N): ")
-            if ordner_erstellen.lower() == ('y'):
-                os.makedirs(teilpfad)
-                check_datei(datei)
+def check_path(file, pathToCheck):
+    path_parts = pathToCheck.split(os.path.sep)
+    for i in range(1, len(path_parts) + 1):
+        sub_path = os.path.join(*path_parts[:i])
+        if not os.path.exists(sub_path):
+            create_folder = input(f"The folder '{sub_path}' does not exist.\nShould this folder be created? (Y/N): ")
+            if create_folder.lower() == 'y':
+                os.makedirs(sub_path)
+                check_file(file)
             else:
-                print("Vorgang abgebrochen, Ordner wird nicht erstellt.")
+                print("Process canceled, folder will not be created.")
                 break
 
-def verschiebe_datei(dateiname, zielort):
-    verzeichnis_pfad = os.getcwd()
-    dateien = os.listdir(verzeichnis_pfad)
-    # verschiebe alle Dateien die den richtigen Dateinamen haben (Übungsname + Nummer)
-    gefunden = [datei for datei in dateien if dateiname in datei]
-    if gefunden:
-        print(f"gefundene Dateien: {gefunden}")
-        for datei in gefunden:
-            print(f"Datei {datei} wird nach {zielort} verschoben")
-            source = os.path.join(verzeichnis_pfad, datei)
-            shutil.move(source, zielort)
+def move_file(filename, destination):
+    current_directory = os.path.dirname(filename)
+    files = os.listdir(current_directory)
+    baseName = os.path.splitext(os.path.basename(filename))[0]
+    
+    # Move all files with the correct filename (exercise name + number)
+    found_files = [file for file in files if baseName in os.path.splitext(file)[0]]
+    print(found_files)
+    if found_files:
+        print(f"Found files matching the criteria: {found_files}")
+        for file in found_files:
+            moveFile = input(f"File {file} will be moved to {destination}.\nContinue? (Y/N): ")
+            if moveFile.lower() == 'y':
+                source = os.path.join(current_directory, file)
+                shutil.move(source, destination)
     else:
-        print(f"Keine Datei/en mit diesem Namen in Verzeichnis {verzeichnis_pfad} gefunden")
+        print(f"No file(s) with this name in directory {current_directory} found")
 
 if len(sys.argv) != 2:
-    print("Bitte gebe genau einen Dateinamen an")
+    print("Please provide exactly one filename")
 else:
     argument = sys.argv[1]
-    check_datei(argument)
+    check_file(argument)
